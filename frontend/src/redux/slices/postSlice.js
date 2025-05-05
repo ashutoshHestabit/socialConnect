@@ -1,0 +1,110 @@
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
+import api from "../../api"
+import { createComment } from "./commentSlice"
+
+export const fetchPosts = createAsyncThunk(
+  "posts/fetchPosts",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.fetchPosts()
+      return response
+    } catch (error) {
+      return rejectWithValue(error.message || "Failed to fetch posts")
+    }
+  }
+)
+
+export const createPost = createAsyncThunk(
+  "posts/createPost",
+  async (postData, { rejectWithValue }) => {
+    try {
+      const response = await api.createPost(postData)
+      return response
+    } catch (error) {
+      return rejectWithValue(error.message || "Failed to create post")
+    }
+  }
+)
+
+export const likePost = createAsyncThunk(
+  "posts/likePost",
+  async (postId, { rejectWithValue }) => {
+    try {
+      const response = await api.likePost(postId)
+      return response
+    } catch (error) {
+      return rejectWithValue(error.message || "Failed to like post")
+    }
+  }
+)
+
+export const deletePost = createAsyncThunk(
+  "posts/deletePost",
+  async (postId, { rejectWithValue }) => {
+    try {
+      await api.deletePost(postId)
+      return postId
+    } catch (error) {
+      return rejectWithValue(error.message || "Failed to delete post")
+    }
+  }
+)
+
+const initialState = {
+  posts: [],
+  loading: false,
+  error: null,
+}
+
+const postSlice = createSlice({
+  name: "posts",
+  initialState,
+  reducers: {
+    clearError: (state) => { state.error = null },
+    addNewPost: (state, action) => { state.posts.unshift(action.payload) },
+    updatePostInState: (state, action) => {
+      const idx = state.posts.findIndex(p => p._id === action.payload._id)
+      if (idx !== -1) state.posts[idx] = action.payload
+    },
+    updatePostComments: (state, action) => {
+      const c = action.payload
+      const post = state.posts.find(p => p._id === c.post)
+      if (post) post.comments.push(c)
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchPosts.pending, (state) => { state.loading = true; state.error = null })
+      .addCase(fetchPosts.fulfilled, (state, { payload }) => { state.loading = false; state.posts = payload })
+      .addCase(fetchPosts.rejected, (state, { payload }) => { state.loading = false; state.error = payload })
+
+      .addCase(createPost.pending, (state) => { state.loading = true; state.error = null })
+      .addCase(createPost.fulfilled, (state, action) => {
+        state.loading = false
+        // no local insert — server/sockets will handle it
+      })
+      .addCase(createPost.rejected, (state, { payload }) => { state.loading = false; state.error = payload })
+
+      .addCase(likePost.fulfilled, (state, { payload }) => {
+        const idx = state.posts.findIndex(p => p._id === payload._id)
+        if (idx !== -1) state.posts[idx] = payload
+      })
+
+      .addCase(createComment.fulfilled, (state, action) => {
+        const comment = action.payload;
+        const post = state.posts.find(p => p._id === comment.post);
+        if (post) {
+          post.comments.push(comment);
+        }
+      })
+
+      .addCase(deletePost.pending, (state) => { state.loading = true; state.error = null })
+      .addCase(deletePost.fulfilled, (state, { payload: id }) => {
+        state.loading = false; state.posts = state.posts.filter(p => p._id !== id)
+      })
+      .addCase(deletePost.rejected, (state, { payload }) => { state.loading = false; state.error = payload })
+  },
+})
+
+export const { clearError, addNewPost, updatePostInState, updatePostComments } = postSlice.actions
+export default postSlice.reducer
