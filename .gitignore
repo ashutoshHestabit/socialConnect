@@ -19,6 +19,7 @@ yarn-error.log*
 # env files
 .env*
 Backend/.env
+Backend/.env.prod
 frontend/.env
 
 # vercel

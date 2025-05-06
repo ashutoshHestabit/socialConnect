@@ -31,4 +31,6 @@ const postSchema = new mongoose.Schema(
   { timestamps: true },
 )
 
+// postSchema.index({author :1})
+
 export default mongoose.model("Post", postSchema)

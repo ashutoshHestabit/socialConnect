@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { likePost, deletePost, updatePostComments } from "../redux/slices/postSlice";
 import { createComment } from "../redux/slices/commentSlice";
-import { FaHeart, FaRegHeart, FaComment, FaEllipsisV, FaPaperPlane } from "react-icons/fa";
+import { FaHeart, FaRegHeart, FaComment, FaTrash, FaPaperPlane } from "react-icons/fa";
 import moment from "moment";
 import { toast } from "react-toastify";
 
@@ -73,7 +73,7 @@ export default function PostList({ posts, userId, socket }) {
                   className="absolute top-2 right-2 text-gray-500 hover:text-red-600"
                   title="Delete post"
                 >
-                  <FaEllipsisV />
+                  <FaTrash />
                 </button>
               )}
 

@@ -19,13 +19,29 @@ const generateToken = (id) => {
  */
 export const registerUser = asyncHandler(async (req, res) => {
   const { username, email, password } = req.body
-
-  // basic validation
   if (!username || !email || !password) {
     res.status(400)
     throw new Error("All fields are required")
   }
 
+  // Username validation
+  if (/\d/.test(username)) {
+    res.status(400)
+    throw new Error("Username cannot contain numbers")
+  }
+
+  // Email validation
+  if (!email.includes('@') || !/^[a-zA-Z0-9]+@/.test(email)) {
+    res.status(400)
+    throw new Error("Invalid email format")
+  }
+
+  // Password validation
+  if (password.length < 6 || !/^[a-zA-Z0-9]+$/.test(password)) {
+    res.status(400)
+    throw new Error("Password must be 6+ alphanumeric characters")
+  }
+  
   // check if user exists
   const exists = await User.findOne({ email })
   if (exists) {

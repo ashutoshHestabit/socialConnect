@@ -2,6 +2,7 @@
 import dotenv from 'dotenv';
 dotenv.config();  
 import Post from "../models/Post.js"
+import Comment from '../models/Comment.js';
 import Notification from "../models/Notification.js"
 import { v2 as cloudinary } from "cloudinary"
 
@@ -116,6 +117,10 @@ export const deletePost = async (req, res) => {
     if (post.author.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: "Not authorized to delete this post" })
     }
+
+
+    await Comment.deleteMany({ post: post._id });
+    await Notification.deleteMany({ post: post._id });
 
     await Post.findByIdAndDelete(req.params.id)
 
