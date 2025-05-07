@@ -65,27 +65,35 @@ export const createPost = async (req, res) => {
   }
 }
 
+// controllers/postController.js
 export const getAllPosts = async (req, res) => {
   try {
+    // 1) Parse pagination params
+    const skip  = parseInt(req.query.skip,  10) || 0;
+    const limit = parseInt(req.query.limit, 10) || 10;
+
+    // 2) Query posts with skip & limit
     const posts = await Post.find()
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .populate("author", "username email")
       .populate({
         path: "comments",
-        populate: {
-          path: "author",
-          select: "username email",
-        },
-      })
-      .sort({ createdAt: -1 })
+        populate: { path: "author", select: "username email" },
+      });
 
-    res.json(posts)
+    // 3) Total count for “hasMore”
+    const total = await Post.countDocuments();
+
+    // 4) Respond with both
+    res.json({ posts, total });
   } catch (error) {
-    res.status(500).json({
-      message: "Failed to fetch posts",
-      error: error.message,
-    })
+    console.error("Pagination error:", error);
+    res.status(500).json({ message: "Failed to fetch posts", error: error.message });
   }
-}
+};
+
 
 export const getPostById = async (req, res) => {
   try {

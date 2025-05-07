@@ -1,11 +1,9 @@
-"use client"
-
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { fetchPosts } from "../redux/slices/postSlice"
 import { fetchComments } from "../redux/slices/commentSlice"
-import { setSelectedChat } from "../redux/slices/uiSlice"
 import { getUnreadCount } from "../redux/slices/notificationSlice"
+import { setSelectedChat } from "../redux/slices/uiSlice"
 import UserList from "./UserList.jsx"
 import Chat from "./Chat.jsx"
 import PostForm from "./PostForm.jsx"
@@ -14,67 +12,89 @@ import PostList from "./PostList.jsx"
 export default function Feed({ socket }) {
   const dispatch = useDispatch()
   const { user } = useSelector((state) => state.auth)
-  const { posts, loading: postsLoading, error: postsError } = useSelector((state) => state.posts)
-  const { comments, loading: commentsLoading } = useSelector((state) => state.comments)
+
+  // Pull exactly your slice fields:
+  const {
+    posts,
+    loading,    // whether we're fetching posts
+    error,      // any fetch error
+    skip,       // how many we've already loaded
+    limit,
+    total,
+    hasMore,    // whether there's more to load
+  } = useSelector((state) => state.posts)
+
+  const {
+    comments,
+    loading: commentsLoading,
+  } = useSelector((state) => state.comments)
+
   const { selectedChat } = useSelector((state) => state.ui)
-  const [isLoading, setIsLoading] = useState(true)
+
+  // single local loading flag for initial mount
+  const [initialLoading, setInitialLoading] = useState(true)
 
   useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true)
+    async function loadAll() {
+      setInitialLoading(true)
       try {
         await Promise.all([
-          dispatch(fetchPosts()).unwrap(),
+          dispatch(fetchPosts({ skip: 0, limit })).unwrap(),
           dispatch(fetchComments()).unwrap(),
           dispatch(getUnreadCount()).unwrap(),
         ])
-      } catch (error) {
-        console.error("Error loading data:", error)
+      } catch (err) {
+        console.error("Error loading feed data:", err)
       } finally {
-        setIsLoading(false)
+        setInitialLoading(false)
       }
     }
-
-    loadData()
-  }, [dispatch])
+    loadAll()
+  }, [dispatch, limit])
 
   const handleSelectChat = (userId) => {
     dispatch(setSelectedChat(userId))
   }
 
-  if (isLoading || postsLoading || commentsLoading) {
+  // Intersection observer for infinite scroll
+  const observer = useRef()
+  const lastPostRef = useCallback(
+    (node) => {
+      if (loading) return
+      if (observer.current) observer.current.disconnect()
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasMore) {
+          dispatch(fetchPosts({ skip, limit }))
+        }
+      })
+      if (node) observer.current.observe(node)
+    },
+    [loading, hasMore, skip, limit, dispatch]
+  )
+
+  // Show skeleton while any initial data is loading
+  if (initialLoading || loading || commentsLoading) {
     return (
       <div className="min-h-screen bg-gray-100 p-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-4">
-              <div className="bg-white rounded-xl shadow-sm p-4 h-64 animate-pulse"></div>
-            </div>
-            <div className="md:col-span-2 space-y-4">
-              <div className="bg-white rounded-xl shadow-sm p-6 h-32 animate-pulse"></div>
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="bg-white rounded-xl shadow-sm p-6 h-48 animate-pulse"></div>
-              ))}
-            </div>
-          </div>
+        <div className="max-w-6xl mx-auto text-center animate-pulse text-gray-500">
+          Loading…
         </div>
       </div>
     )
   }
 
-  if (postsError) {
+  // Show error if posts fetch failed
+  if (error) {
     return (
       <div className="min-h-screen bg-gray-100 p-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="bg-white rounded-xl shadow-sm p-6 text-center">
-            <h2 className="text-xl font-semibold text-red-500 mb-4">{postsError}</h2>
-            <button
-              onClick={() => dispatch(fetchPosts())}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            >
-              Retry
-            </button>
-          </div>
+        <div className="max-w-xl mx-auto bg-white p-6 rounded-xl shadow text-center">
+          <h2 className="text-red-600 font-semibold mb-4">{error}</h2>
+          <button
+            onClick={() => dispatch(fetchPosts({ skip: 0, limit }))}
+            className="bg-blue-600 text-white px-4 py-2 rounded"
+          >
+            Retry
+          </button>
         </div>
       </div>
     )
@@ -82,34 +102,53 @@ export default function Feed({ socket }) {
 
   return (
     <div className="min-h-screen bg-gray-100 p-4">
-      <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Left sidebar - User list */}
+      <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Sidebar */}
+        <aside className="space-y-4">
+          <div className="bg-white p-4 rounded-xl shadow">
+            <h3 className="font-semibold mb-2">Active Friends</h3>
+            <UserList
+              current={user._id}
+              selected={selectedChat}
+              onSelect={handleSelectChat}
+            />
+          </div>
+        </aside>
+
+        {/* Main */}
+        <main className="md:col-span-2 space-y-4">
+          {/* Chat */}
+          {selectedChat && (
+            <div className="bg-white rounded-xl shadow overflow-hidden">
+              <Chat socket={socket} userId={user._id} peerId={selectedChat} />
+            </div>
+          )}
+
+          {/* New Post */}
+          <PostForm socket={socket} />
+
+          {/* Posts List with Infinite Scroll */}
           <div className="space-y-4">
-            <div className="bg-white rounded-xl shadow-sm p-4">
-              <h3 className="text-lg font-semibold mb-4">Active Friends</h3>
-              <UserList current={user._id} selected={selectedChat} onSelect={handleSelectChat} />
-            </div>
-          </div>
-
-          {/* Main content area */}
-          <div className="md:col-span-2 space-y-4">
-            {/* Chat with selected peer */}
-            {selectedChat && (
-              <div className="bg-white rounded-xl shadow-sm">
-                <Chat socket={socket} userId={user._id} peerId={selectedChat} />
-              </div>
+            {posts.map((post, idx) => {
+              const isLast = idx === posts.length - 1
+              return (
+                <div key={post._id} ref={isLast ? lastPostRef : null}>
+                  <PostList
+                    posts={[post]}
+                    comments={comments}
+                    userId={user._id}
+                    socket={socket}
+                  />
+                </div>
+              )
+            })}
+            {!hasMore && (
+              <p className="text-center text-gray-500 mt-4">
+                You’ve reached the end!
+              </p>
             )}
-
-            {/* Post form */}
-            <PostForm socket={socket} />
-
-            {/* Posts list */}
-            <div className="space-y-4">
-              <PostList posts={posts} comments={comments || []} userId={user._id} socket={socket} />
-            </div>
           </div>
-        </div>
+        </main>
       </div>
     </div>
   )

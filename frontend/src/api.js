@@ -66,11 +66,12 @@ const api = {
   },
 
   // Post endpoints
-  fetchPosts: async () => {
-    const res = await fetch(`${API_URL}/api/posts`, {
-      headers: getAuthHeaders(),
-    })
-    return handleResponse(res)
+  fetchPosts: async ({ skip = 0, limit = 10 } = {}) => {
+    const res = await fetch(
+      `${API_URL}/api/posts?skip=${skip}&limit=${limit}`,
+      { headers: getAuthHeaders() }
+    );
+    return handleResponse(res); // now returns { posts, total }
   },
 
   createPost: async (formData) => {

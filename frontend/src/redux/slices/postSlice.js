@@ -4,15 +4,15 @@ import { createComment } from "./commentSlice"
 
 export const fetchPosts = createAsyncThunk(
   "posts/fetchPosts",
-  async (_, { rejectWithValue }) => {
+  async ({ skip, limit }, { rejectWithValue }) => {
     try {
-      const response = await api.fetchPosts()
-      return response
-    } catch (error) {
-      return rejectWithValue(error.message || "Failed to fetch posts")
+      return await api.fetchPosts({ skip, limit });
+    } catch (err) {
+      return rejectWithValue(err.message);
     }
   }
-)
+);
+
 
 export const createPost = createAsyncThunk(
   "posts/createPost",
@@ -54,7 +54,12 @@ const initialState = {
   posts: [],
   loading: false,
   error: null,
-}
+  skip: 0,
+  limit: 10,
+  total: 0,
+  hasMore: true,
+};
+
 
 const postSlice = createSlice({
   name: "posts",
@@ -75,7 +80,20 @@ const postSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchPosts.pending, (state) => { state.loading = true; state.error = null })
-      .addCase(fetchPosts.fulfilled, (state, { payload }) => { state.loading = false; state.posts = payload })
+      .addCase(fetchPosts.fulfilled, (state, { payload }) => {
+        state.loading = false;
+        const { posts: newPosts, total } = payload;
+      
+        // On first page, replace; otherwise append
+        state.posts = state.skip === 0
+          ? newPosts
+          : [...state.posts, ...newPosts];
+      
+        state.total   = total;
+        state.hasMore = state.posts.length < total;
+        state.skip += state.limit;
+      })
+      
       .addCase(fetchPosts.rejected, (state, { payload }) => { state.loading = false; state.error = payload })
 
       .addCase(createPost.pending, (state) => { state.loading = true; state.error = null })
