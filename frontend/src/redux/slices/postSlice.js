@@ -71,11 +71,6 @@ const postSlice = createSlice({
       const idx = state.posts.findIndex(p => p._id === action.payload._id)
       if (idx !== -1) state.posts[idx] = action.payload
     },
-    updatePostComments: (state, action) => {
-      const c = action.payload
-      const post = state.posts.find(p => p._id === c.post)
-      if (post) post.comments.push(c)
-    },
   },
   extraReducers: (builder) => {
     builder
@@ -108,12 +103,9 @@ const postSlice = createSlice({
         if (idx !== -1) state.posts[idx] = payload
       })
 
-      .addCase(createComment.fulfilled, (state, action) => {
-        const comment = action.payload;
-        const post = state.posts.find(p => p._id === comment.post);
-        if (post) {
-          post.comments.push(comment);
-        }
+      .addCase(createComment.fulfilled, (state, { payload: comment }) => {
+        const post = state.posts.find(p => p._id === comment.post)
+        if (post) post.comments.push(comment)
       })
 
       .addCase(deletePost.pending, (state) => { state.loading = true; state.error = null })

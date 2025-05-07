@@ -50,7 +50,6 @@ export default function PostList({ posts, userId, socket }) {
       ).unwrap();
 
       setCommentText(p => ({ ...p, [postId]: "" }));
-      dispatch(updatePostComments(newComment));
       toast.success("Comment added");
     } catch (err) {
       console.error("createComment error:", err);

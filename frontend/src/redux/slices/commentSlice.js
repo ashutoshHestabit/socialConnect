@@ -17,13 +17,14 @@ export const createComment = createAsyncThunk(
   "comments/createComment",
   async (commentData, { rejectWithValue }) => {
     try {
-      const response = await api.createComment(commentData)
-      return response.comment
+      // api.createComment now returns the comment object directly
+      return await api.createComment(commentData)
     } catch (error) {
-      return rejectWithValue(error.message || "Failed to create comment")
+      return rejectWithValue(error.message)
     }
   }
 )
+
 
 const initialState = {
   comments: [],
