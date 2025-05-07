@@ -32,7 +32,6 @@ export default function Login() {
   }
 
   const handleGoogleSuccess = async (credentialResponse) => {
-    console.log("Google login success:", credentialResponse)
     if (credentialResponse.credential) {
       dispatch(googleLogin(credentialResponse.credential))
     } else {

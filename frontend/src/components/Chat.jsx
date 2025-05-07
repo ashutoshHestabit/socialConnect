@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect, useRef } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { FaPaperPlane, FaSmile, FaImage } from "react-icons/fa"
