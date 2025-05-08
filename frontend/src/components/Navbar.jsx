@@ -13,13 +13,13 @@ export default function Navbar({ user, onLogout }) {
   const dispatch = useDispatch()
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  useEffect(() => {
-    if (user) {
-      dispatch(getUnreadCount())
-      const interval = setInterval(() => dispatch(getUnreadCount()), 60000)
-      return () => clearInterval(interval)
-    }
-  }, [user, dispatch])
+  // useEffect(() => {
+  //   if (user) {
+  //     dispatch(getUnreadCount())
+  //     const interval = setInterval(() => dispatch(getUnreadCount()), 60000)
+  //     return () => clearInterval(interval)
+  //   }
+  // }, [user, dispatch])
 
   const handleLogout = () => {
     dispatch(logoutUser())

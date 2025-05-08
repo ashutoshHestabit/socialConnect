@@ -12,10 +12,10 @@ import Register from "./components/Register.jsx"
 import Feed from "./components/Feed.jsx"
 import Footer from "./components/Footer.jsx"
 import { setToken } from "./api.js"
-import { addNewPost, updatePostInState, updatePostComments } from "./redux/slices/postSlice"
-import { addNewComment } from "./redux/slices/commentSlice"
-import { addNewNotification } from "./redux/slices/notificationSlice"
-import { receiveMessage } from "./redux/slices/messageSlice"
+import { addNewPost, updatePostInState, updatePostComments } from "./redux/slices/postSlice.js"
+import { addNewComment } from "./redux/slices/commentSlice.js"
+import { addNewNotification } from "./redux/slices/notificationSlice.js"
+import { receiveMessage } from "./redux/slices/messageSlice.js"
 
 // Initialize socket connection
 const socket = io("http://localhost:5000", {
