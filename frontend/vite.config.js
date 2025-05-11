@@ -10,7 +10,7 @@ export default defineConfig({
     port: 5173,
     allowedHosts: [
       "localhost",
-      "testingsocialmedia-1.onrender.com"
+      "https://socialconnect-2x58.onrender.com"
     ],
     proxy: {
       "/api": {
