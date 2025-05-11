@@ -52,6 +52,26 @@ export const createComment = async (req, res) => {
   }
 }
 
+// commentController.js
+export const updateComment = async (req, res) => {
+  try {
+    const comment = await Comment.findById(req.params.id)
+    if (!comment) return res.status(404).json({ message: "Comment not found" })
+
+    if (comment.author.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized" })
+    }
+
+    comment.content = req.body.content
+    const updatedComment = await comment.save()
+    
+    res.json(updatedComment)
+    req.app.get('io').emit('updateComment', updatedComment)
+  } catch (error) {
+    res.status(500).json({ message: "Error updating comment", error: error.message })
+  }
+}
+
 export const getAllComments = async (req, res) => {
   try {
     const { postId } = req.query

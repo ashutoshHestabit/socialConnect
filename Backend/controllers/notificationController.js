@@ -34,9 +34,14 @@ export const getUnreadCount = asyncHandler(async (req, res) => {
 // Mark notifications as read
 export const markAsRead = asyncHandler(async (req, res) => {
   try {
-    await Notification.updateMany({ recipient: req.user._id, read: false }, { read: true })
-
-    res.json({ message: "Notifications marked as read" })
+    await Notification.updateMany(
+      { recipient: req.user._id, read: false },
+      { $set: { read: true } }
+    )
+    
+    const notifications = await Notification.find({ recipient: req.user._id })
+    res.json({ notifications })
+    
   } catch (error) {
     res.status(500).json({ message: "Error marking notifications as read", error: error.message })
   }

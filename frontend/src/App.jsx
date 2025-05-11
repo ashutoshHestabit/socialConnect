@@ -47,6 +47,10 @@ export default function App() {
       socket.on("newComment", (comment) => {
         dispatch(createComment.fulfilled(comment));
       });
+      socket.on("updateComment", (updatedComment) => {
+        dispatch(updateCommentInState(updatedComment))
+      })
+      
 
       socket.on("newNotification", (notification) => {
         dispatch(addNewNotification(notification))

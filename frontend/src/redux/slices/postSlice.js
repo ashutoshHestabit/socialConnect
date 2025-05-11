@@ -26,6 +26,18 @@ export const createPost = createAsyncThunk(
   }
 )
 
+export const updatePost = createAsyncThunk(
+  "posts/updatePost",
+  async ({ postId, content }, { rejectWithValue }) => {
+    try {
+      const response = await api.updatePost(postId, { content })
+      return response
+    } catch (error) {
+      return rejectWithValue(error.message || "Failed to update post")
+    }
+  }
+)
+
 export const likePost = createAsyncThunk(
   "posts/likePost",
   async (postId, { rejectWithValue }) => {
@@ -97,6 +109,12 @@ const postSlice = createSlice({
         // no local insert — server/sockets will handle it
       })
       .addCase(createPost.rejected, (state, { payload }) => { state.loading = false; state.error = payload })
+      .addCase(updatePost.fulfilled, (state, { payload }) => {
+        const index = state.posts.findIndex(post => post._id === payload._id)
+        if (index !== -1) {
+          state.posts[index] = payload
+        }
+      })
 
       .addCase(likePost.fulfilled, (state, { payload }) => {
         const idx = state.posts.findIndex(p => p._id === payload._id)

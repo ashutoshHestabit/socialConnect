@@ -83,6 +83,33 @@ const api = {
     return handleResponse(res)
   },
 
+  updatePost: async (postId, data) => {
+    const res = await fetch(`${API_URL}/api/posts/${postId}`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    })
+    return handleResponse(res)
+  },
+  
+  // Comment endpoints
+  updateComment: async (commentId, data) => {
+    const res = await fetch(`${API_URL}/api/comments/${commentId}`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    })
+    return handleResponse(res)
+  },
+  
+  deleteComment: async (commentId) => {
+    const res = await fetch(`${API_URL}/api/comments/${commentId}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    })
+    return handleResponse(res)
+  },
+
   deletePost: async (postId) => {
     const res = await fetch(`${API_URL}/api/posts/${postId}`, {
       method: "DELETE",

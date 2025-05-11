@@ -65,6 +65,34 @@ export const createPost = async (req, res) => {
   }
 }
 
+
+export const updatePost = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id)
+    if (!post) return res.status(404).json({ message: "Post not found" })
+
+    if (post.author.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized" })
+    }
+
+    const { content } = req.body
+    post.content = content || post.content
+
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.buffer.toString('base64'))
+      post.image = result.secure_url
+    }
+
+    const updatedPost = await post.save()
+    res.json(updatedPost)
+    
+    req.app.get('io').emit('updatePost', updatedPost)
+  } catch (error) {
+    res.status(500).json({ message: "Error updating post", error: error.message })
+  }
+}
+
+
 // controllers/postController.js
 export const getAllPosts = async (req, res) => {
   try {

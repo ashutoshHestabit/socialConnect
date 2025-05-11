@@ -1,195 +1,290 @@
-// src/components/PostList.jsx
-import React, { useState } from "react";
+import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { likePost, deletePost, updatePostComments } from "../redux/slices/postSlice";
-import { createComment } from "../redux/slices/commentSlice";
-import { FaHeart, FaRegHeart, FaComment, FaTrash, FaPaperPlane } from "react-icons/fa";
-import moment from "moment";
-import { toast } from "react-toastify";
+import { deletePost, likePost, updatePost } from "../redux/slices/postSlice";
+import { createComment, updateComment, deleteComment } from "../redux/slices/commentSlice";
+import { FaComment, FaHeart, FaTrash, FaEdit, FaCheck, FaTimes, FaRegComment } from "react-icons/fa";
 
 export default function PostList({ posts, userId, socket }) {
   const dispatch = useDispatch();
+  const [editingPostId, setEditingPostId] = useState(null);
+  const [editedContent, setEditedContent] = useState("");
   const [commentText, setCommentText] = useState({});
-  const [expandedComments, setExpandedComments] = useState({});
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editedCommentContent, setEditedCommentContent] = useState("");
+  const [expandedPosts, setExpandedPosts] = useState({});
 
-  // Handle liking a post
-  const handleLike = async (postId) => {
-    try {
-      await dispatch(likePost(postId)).unwrap();
-    } catch (err) {
-      toast.error("Failed to like post");
-    }
-  };
-
-  // Handle deleting a post
-  const handleDelete = async (postId) => {
-    if (!window.confirm("Delete this post?")) return;
-    try {
-      await dispatch(deletePost(postId)).unwrap();
-      toast.success("Post deleted");
-    } catch (err) {
-      toast.error("Failed to delete post");
-    }
-  };
-
-  // Handle toggling comments
+  // Post handlers
   const toggleComments = (postId) => {
-    setExpandedComments((prev) => ({
+    setExpandedPosts(prev => ({
       ...prev,
-      [postId]: !prev[postId],
+      [postId]: !prev[postId]
     }));
   };
-  
-  const handleComment = async (postId) => {
-    const text = commentText[postId]?.trim();
-    if (!text) return;
 
-    try {
-      const newComment = await dispatch(
-        createComment({ post: postId, content: text })
-      ).unwrap();
+  const handleLike = (postId) => {
+    dispatch(likePost(postId));
+    socket.emit("likePost", postId);
+  };
 
-      setCommentText(p => ({ ...p, [postId]: "" }));
-      toast.success("Comment added");
-    } catch (err) {
-      console.error("createComment error:", err);
-      toast.error(err.message || "Failed to add comment");
+  const handleDeletePost = (postId) => {
+    if (window.confirm("Are you sure you want to delete this post?")) {
+      dispatch(deletePost(postId));
+      socket.emit("deletePost", postId);
     }
   };
-  
+
+  const startPostEdit = (post) => {
+    setEditingPostId(post._id);
+    setEditedContent(post.content);
+  };
+
+  const cancelPostEdit = () => {
+    setEditingPostId(null);
+    setEditedContent("");
+  };
+
+  const submitPostEdit = (postId) => {
+    if (editedContent.trim()) {
+      dispatch(updatePost({ postId, content: editedContent }));
+      socket.emit("updatePost", postId);
+      cancelPostEdit();
+    }
+  };
+
+  // Comment handlers
+  const handleCommentSubmit = (postId) => {
+    if (commentText[postId]?.trim()) {
+      dispatch(createComment({ post: postId, content: commentText[postId] }));
+      socket.emit("newComment", { postId });
+      setCommentText(prev => ({ ...prev, [postId]: "" }));
+    }
+  };
+
+  const startCommentEdit = (comment) => {
+    setEditingCommentId(comment._id);
+    setEditedCommentContent(comment.content);
+  };
+
+  const cancelCommentEdit = () => {
+    setEditingCommentId(null);
+    setEditedCommentContent("");
+  };
+
+  const submitCommentEdit = () => {
+    if (editedCommentContent.trim() && editingCommentId) {
+      dispatch(updateComment({ commentId: editingCommentId, content: editedCommentContent }));
+      socket.emit("updateComment", editingCommentId);
+      cancelCommentEdit();
+    }
+  };
+
+  const handleDeleteComment = (commentId) => {
+    if (window.confirm("Are you sure you want to delete this comment?")) {
+      dispatch(deleteComment(commentId));
+      socket.emit("deleteComment", commentId);
+    }
+  };
+
+  // Render comments for a post
+  const renderComments = (comments) => {
+    return comments.map(comment => (
+      <div key={comment._id} className="ml-6 mt-2 flex items-start space-x-2">
+        <img
+          src={comment.author.profilePicture || `https://ui-avatars.com/api/?name=${comment.author.username}&background=random`}
+          className="w-6 h-6 rounded-full"
+          alt={comment.author.username}
+        />
+        <div className="flex-1 bg-gray-100 p-2 rounded-lg">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-sm font-medium">{comment.author.username}</span>
+            
+            {comment.author._id === userId && (
+              <div className="flex space-x-2">
+                {editingCommentId === comment._id ? (
+                  <>
+                    <button
+                      onClick={cancelCommentEdit}
+                      className="text-red-500 hover:text-red-700 text-xs"
+                    >
+                      <FaTimes />
+                    </button>
+                    <button
+                      onClick={submitCommentEdit}
+                      className="text-green-500 hover:text-green-700 text-xs"
+                    >
+                      <FaCheck />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => startCommentEdit(comment)}
+                      className="text-blue-500 hover:text-blue-700 text-xs"
+                    >
+                      <FaEdit />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteComment(comment._id)}
+                      className="text-red-500 hover:text-red-700 text-xs"
+                    >
+                      <FaTrash />
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {editingCommentId === comment._id ? (
+            <input
+              type="text"
+              value={editedCommentContent}
+              onChange={(e) => setEditedCommentContent(e.target.value)}
+              className="w-full p-1 text-sm border rounded mt-1"
+              autoFocus
+            />
+          ) : (
+            <p className="text-sm">{comment.content}</p>
+          )}
+        </div>
+      </div>
+    ));
+  };
 
   return (
     <div className="space-y-6">
-      {posts.length ? (
-        posts.map((post) => {
-          const isAuthor = post.author._id === userId;
-          return (
-            <div key={post._id} className="bg-white rounded-xl shadow-sm overflow-hidden relative">
-              {/* Delete button */}
-              {isAuthor && (
-                <button
-                  onClick={() => handleDelete(post._id)}
-                  className="absolute top-2 right-2 text-gray-500 hover:text-red-600"
-                  title="Delete post"
-                >
-                  <FaTrash />
-                </button>
-              )}
-
-              {/* Post header */}
-              <div className="p-4 flex items-center">
-                <img
-                  src={`https://ui-avatars.com/api/?name=${post.author.username}&background=random`}
-                  className="w-10 h-10 rounded-full mr-3"
-                  alt={post.author.username}
-                />
-                <div>
-                  <h3 className="font-semibold text-gray-800">{post.author.username}</h3>
-                  <p className="text-xs text-gray-500">{moment(post.createdAt).fromNow()}</p>
-                </div>
+      {posts.map(post => (
+        <div key={post._id} className="bg-white rounded-xl shadow-sm p-4">
+          {/* Post Header */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <img
+                src={post.author.profilePicture || `https://ui-avatars.com/api/?name=${post.author.username}&background=random`}
+                className="w-10 h-10 rounded-full"
+                alt={post.author.username}
+              />
+              <div>
+                <h3 className="font-semibold">{post.author.username}</h3>
+                <p className="text-sm text-gray-500">
+                  {new Date(post.createdAt).toLocaleDateString()}
+                </p>
               </div>
-
-              {/* Content */}
-              <div className="px-4 pb-3">
-                <p className="text-gray-800 mb-3">{post.content}</p>
-              </div>
-
-              {/* Image */}
-              {post.image && (
-                <div className="w-full">
-                  <img
-                    src={post.image}
-                    alt="Post content"
-                    className="w-full max-h-96 object-cover"
-                  />
-                </div>
-              )}
-
-              {/* Actions */}
-              <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
-                <button
-                  onClick={() => handleLike(post._id)}
-                  className={`flex items-center space-x-1 px-3 py-1 rounded-md ${
-                    post.likes.includes(userId) ? "text-red-600" : "text-gray-600 hover:bg-gray-100"
-                  }`}
-                >
-                  {post.likes.includes(userId) ? <FaHeart /> : <FaRegHeart />}
-                  <span>{post.likes.length}</span>
-                </button>
-
-                <button
-                  onClick={() => toggleComments(post._id)}
-                  className="flex items-center space-x-1 px-3 py-1 rounded-md text-gray-600 hover:bg-gray-100"
-                >
-                  <FaComment />
-                  <span>{post.comments.length}</span>
-                </button>
-              </div>
-
-              {/* Comments */}
-              {expandedComments[post._id] && (
-                <div className="border-t border-gray-100 p-4">
-                  {/* Input */}
-                  <div className="flex items-center space-x-2 mb-4">
-                    <input
-                      type="text"
-                      value={commentText[post._id] || ""}
-                      onChange={(e) =>
-                        setCommentText((p) => ({ ...p, [post._id]: e.target.value }))
-                      }
-                      placeholder="Write a comment..."
-                      className="flex-1 border rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      onKeyDown={(e) => e.key === "Enter" && handleComment(post._id)}
-                    />
-                    <button
-                      onClick={() => handleComment(post._id)}
-                      disabled={!commentText[post._id]?.trim()}
-                      className="text-blue-600 p-2 rounded-full hover:bg-blue-50 disabled:text-gray-400"
-                    >
-                      <FaPaperPlane />
-                    </button>
-                  </div>
-
-                  {/* List */}
-                  <div className="space-y-3 max-h-60 overflow-y-auto">
-                    {post.comments.length ? (
-                      post.comments.map((c) => (
-                        <div key={c._id} className="flex space-x-2">
-                          <img
-                            src={`https://ui-avatars.com/api/?name=${c.author.username}&background=random`}
-                            className="w-8 h-8 rounded-full"
-                            alt={c.author.username}
-                          />
-                          <div className="bg-gray-100 rounded-2xl px-3 py-2 flex-1">
-                            <div className="flex justify-between">
-                              <h4 className="font-medium text-sm text-gray-800">
-                                {c.author.username}
-                              </h4>
-                              <span className="text-xs text-gray-500">
-                                {moment(c.createdAt).fromNow()}
-                              </span>
-                            </div>
-                            <p className="text-gray-800 text-sm mt-1">{c.content}</p>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-center text-gray-500 text-sm py-2">
-                        No comments yet.
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
-          );
-        })
-      ) : (
-        <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-          <h3 className="text-xl font-semibold text-gray-800 mb-2">No posts yet</h3>
-          <p className="text-gray-600">Be the first to share something!</p>
+
+            {post.author._id === userId && (
+              <div className="flex space-x-2">
+                {editingPostId === post._id ? (
+                  <>
+                    <button 
+                      onClick={cancelPostEdit}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <FaTimes />
+                    </button>
+                    <button
+                      onClick={() => submitPostEdit(post._id)}
+                      className="text-green-500 hover:text-green-700"
+                    >
+                      <FaCheck />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => startPostEdit(post)}
+                      className="text-blue-500 hover:text-blue-700"
+                    >
+                      <FaEdit />
+                    </button>
+                    <button
+                      onClick={() => handleDeletePost(post._id)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <FaTrash />
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Post Content */}
+          {editingPostId === post._id ? (
+            <textarea
+              value={editedContent}
+              onChange={(e) => setEditedContent(e.target.value)}
+              className="w-full p-2 border rounded mb-4"
+              rows="3"
+              autoFocus
+            />
+          ) : (
+            <>
+              <p className="mb-4">{post.content}</p>
+              {post.image && (
+                <img
+                  src={post.image}
+                  alt="Post"
+                  className="w-full h-64 object-cover rounded-lg mb-4"
+                />
+              )}
+            </>
+          )}
+
+          {/* Post Actions */}
+          <div className="flex items-center justify-between border-t pt-3">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => handleLike(post._id)}
+                className={`flex items-center space-x-1 ${
+                  post.likes.includes(userId) ? 'text-red-500' : 'text-gray-500'
+                }`}
+              >
+                <FaHeart />
+                <span>{post.likes.length}</span>
+              </button>
+
+              <button
+                onClick={() => toggleComments(post._id)}
+                className="flex items-center space-x-1 text-gray-500"
+              >
+                {expandedPosts[post._id] ? <FaComment /> : <FaRegComment />}
+                <span>{post.comments.length}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Comments Section */}
+          {expandedPosts[post._id] && (
+            <div className="mt-4">
+              {post.comments.length > 0 && (
+                <div className="mb-4 space-y-2">
+                  {renderComments(post.comments)}
+                </div>
+              )}
+
+              <div className="mt-4 flex items-center space-x-2">
+                <input
+                  type="text"
+                  value={commentText[post._id] || ""}
+                  onChange={(e) => setCommentText(prev => ({
+                    ...prev,
+                    [post._id]: e.target.value
+                  }))}
+                  placeholder="Write a comment..."
+                  className="flex-1 p-2 border rounded"
+                  onKeyPress={(e) => e.key === 'Enter' && handleCommentSubmit(post._id)}
+                />
+                <button
+                  onClick={() => handleCommentSubmit(post._id)}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  Post
+                </button>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      ))}
     </div>
-);
+  );
 }
