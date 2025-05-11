@@ -18,7 +18,7 @@ import { addNewNotification } from "./redux/slices/notificationSlice.js"
 import { receiveMessage } from "./redux/slices/messageSlice.js"
 
 // Initialize socket connection
-const socket = io("http://localhost:5000", {
+const socket = io("https://socialconnect-2x58.onrender.com", {
   reconnection: true,
   reconnectionAttempts: 5,
   reconnectionDelay: 1000,

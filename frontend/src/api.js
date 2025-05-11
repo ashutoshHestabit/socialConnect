@@ -1,5 +1,5 @@
 // src/api.js
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000"
+const API_URL = import.meta.env.VITE_API_URL || "https://socialconnect-2x58.onrender.com"
 
 export const setToken = (token) => {
   if (token) {
