@@ -43,13 +43,16 @@ export default function Register() {
     }
 
     // Password validation
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      isValid = false;
-    } else if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
-      isValid = false;
-    }
+if (password.length < 6) {
+  toast.error("Password must be at least 6 characters");
+  isValid = false;
+} else if (!/^(?=.*[a-zA-Z])(?=.*[0-9])[a-zA-Z0-9]+$/.test(password)) {
+  toast.error("Password must contain a mix of alphabets and numbers");
+  isValid = false;
+} else if (password !== confirmPassword) {
+  toast.error("Passwords do not match");
+  isValid = false;
+}
 
     return isValid;
   };
@@ -57,21 +60,27 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-
+  
     try {
-      const resultAction = await dispatch(registerUser({ username, email, password }));
-      const result = await resultAction.unwrap();
-      
-      if (result.error) {
-        throw new Error(result.error);
-      }
-    } catch (error) {
-      const errorMessage = typeof error === 'string' 
-        ? error 
-        : "Registration failed. Please try again.";
-      toast.error(errorMessage);
+      // 1) Dispatch but don’t await yet
+      const promise = dispatch(registerUser({ username, email, password }));
+      // 2) Await the unwrapped payload
+      const userData = await promise.unwrap();
+  
+      toast.success("Registration successful! Redirecting…");
+      // give the user a moment to see the toast
+      setTimeout(() => navigate("/feed"), 1000);
+    } catch (err) {
+      // unwrap() will throw the rejected error.payload or message
+      const msg =
+        typeof err === "string"
+          ? err
+          : err?.message || "Registration failed. Please try again.";
+      toast.error(msg);
     }
   };
+  
+  
 
   const handleGoogleSuccess = async (credentialResponse) => {
     if (!credentialResponse.credential) {
