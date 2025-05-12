@@ -1,80 +1,100 @@
-import { useState, useEffect } from "react"
-import { Link, useNavigate } from "react-router-dom"
-import { useDispatch, useSelector } from "react-redux"
-import { registerUser, googleLogin, clearError } from "../redux/slices/authSlice"
-import { GoogleLogin } from "@react-oauth/google"
-import { ToastContainer, toast } from "react-toastify"
-import "react-toastify/dist/ReactToastify.css"
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { registerUser, googleLogin, clearError } from "../redux/slices/authSlice";
+import { GoogleLogin } from "@react-oauth/google";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function Register() {
-  const [username, setUsername] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
-  const dispatch = useDispatch()
-  const navigate = useNavigate()
-  const { loading, error, user } = useSelector((state) => state.auth)
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { loading, user } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    dispatch(clearError())
-    if (user) navigate("/feed")
-  }, [dispatch, user, navigate])
+    dispatch(clearError());
+    if (user) navigate("/feed");
+  }, [dispatch, user, navigate]);
 
   const validateForm = () => {
-    if (!username || /^\d+$/.test(username)) {
-      toast.error("Username must contain letters")
-      return false
+    let isValid = true;
+
+    // Username validation
+    if (!username.trim()) {
+      toast.error("Username is required");
+      isValid = false;
+    } else if (/^\d+$/.test(username)) {
+      toast.error("Username must contain letters");
+      isValid = false;
+    } else if (!/^[A-Za-z0-9_]+$/.test(username)) {
+      toast.error("Username can only contain letters, numbers, and underscores");
+      isValid = false;
     }
 
+    // Email validation
     if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(email)) {
-      toast.error("Invalid email address")
-      return false
+      toast.error("Invalid email address format");
+      isValid = false;
     }
 
+    // Password validation
     if (password.length < 6) {
-      toast.error("Password must be at least 6 characters")
-      return false
+      toast.error("Password must be at least 6 characters");
+      isValid = false;
+    } else if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      isValid = false;
     }
 
-    if (password !== confirmPassword) {
-      toast.error("Passwords don't match")
-      return false
+    return isValid;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    try {
+      const resultAction = await dispatch(registerUser({ username, email, password }));
+      const result = await resultAction.unwrap();
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      const errorMessage = typeof error === 'string' 
+        ? error 
+        : "Registration failed. Please try again.";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    if (!credentialResponse.credential) {
+      toast.error("Google sign-up failed");
+      return;
     }
 
-    return true
-  }
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    if (validateForm()) {
-      dispatch(registerUser({ username, email, password }))
+    try {
+      await dispatch(googleLogin(credentialResponse.credential)).unwrap();
+    } catch (error) {
+      toast.error("Google sign-up failed. Please try again.");
     }
-  }
-
-  const handleGoogleSuccess = (credentialResponse) => {
-    if (credentialResponse.credential) {
-      dispatch(googleLogin(credentialResponse.credential))
-    } else {
-      toast.error("Google sign-up failed")
-    }
-  }
+  };
 
   const handleGoogleError = () => {
-    toast.error("Google sign-up failed")
-  }
+    toast.error("Google sign-up failed. Please try another method.");
+  };
 
   return (
     <div className="max-w-md mx-auto mt-16 p-6 bg-white rounded-lg shadow-lg">
       <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
         Create an Account
       </h2>
-
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -189,5 +209,5 @@ export default function Register() {
         pauseOnHover
       />
     </div>
-  )
+  );
 }
