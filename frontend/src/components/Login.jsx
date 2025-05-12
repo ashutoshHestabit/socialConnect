@@ -5,6 +5,8 @@ import { Link, useNavigate } from "react-router-dom"
 import { useDispatch, useSelector } from "react-redux"
 import { loginUser, googleLogin, clearError } from "../redux/slices/authSlice"
 import { GoogleLogin } from "@react-oauth/google"
+import { ToastContainer, toast } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
 
 export default function Login() {
   const [email, setEmail] = useState("")
@@ -12,13 +14,13 @@ export default function Login() {
 
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const { loading, error, user } = useSelector((state) => state.auth)
+  const { loading, user } = useSelector((state) => state.auth)
 
   useEffect(() => {
-    // Clear any previous errors
+    // Clear previous error state (so we don't see stale messages)
     dispatch(clearError())
 
-    // If user is already logged in, redirect to feed
+    // If already logged in, redirect
     if (user) {
       navigate("/feed")
     }
@@ -26,28 +28,46 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!email || !password) return
 
-    dispatch(loginUser({ email, password }))
-  }
+    if (!email || !password) {
+      toast.error("Please fill in both email and password")
+      return
+    }
 
-  const handleGoogleSuccess = async (credentialResponse) => {
-    if (credentialResponse.credential) {
-      dispatch(googleLogin(credentialResponse.credential))
-    } else {
-      console.error("No credential received from Google")
+    try {
+      // unwrap() will throw if the thunk was rejected
+      await dispatch(loginUser({ email, password })).unwrap()
+      toast.success("Logged in successfully")
+      navigate("/feed")
+    } catch (err) {
+      // err.message may be our API’s error or a network/parse error
+      toast.error(err.message || "Login failed")
     }
   }
 
-  const handleGoogleError = (error) => {
-    console.error("Google login failed:", error)
+  const handleGoogleSuccess = async (credentialResponse) => {
+    if (!credentialResponse.credential) {
+      toast.error("Google login failed: no credential returned")
+      return
+    }
+    try {
+      await dispatch(googleLogin(credentialResponse.credential)).unwrap()
+      toast.success("Logged in with Google")
+      navigate("/feed")
+    } catch (err) {
+      toast.error(err.message || "Google login failed")
+    }
+  }
+
+  const handleGoogleError = () => {
+    toast.error("Google login failed")
   }
 
   return (
     <div className="max-w-md mx-auto mt-20 p-6 bg-white rounded-lg shadow-lg">
-      <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Login to Your Account</h2>
-
-      {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}
+      <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
+        Login to Your Account
+      </h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -83,7 +103,7 @@ export default function Login() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:bg-blue-300"
+          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors disabled:bg-blue-300"
         >
           {loading ? "Logging in..." : "Login"}
         </button>
@@ -99,19 +119,17 @@ export default function Login() {
           </div>
         </div>
 
-        <div className="mt-6">
-          <div className="flex justify-center">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={handleGoogleError}
-              useOneTap={false}
-              theme="filled_blue"
-              text="signin_with"
-              shape="rectangular"
-              locale="en"
-              width="280"
-            />
-          </div>
+        <div className="mt-6 flex justify-center">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+            useOneTap={false}
+            theme="filled_blue"
+            text="signin_with"
+            shape="rectangular"
+            locale="en"
+            width="280"
+          />
         </div>
       </div>
 
@@ -121,6 +139,19 @@ export default function Login() {
           Sign up
         </Link>
       </p>
+
+      {/* Toast container */}
+      <ToastContainer
+        position="bottom-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </div>
   )
 }
