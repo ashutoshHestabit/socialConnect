@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
 import api from "../../api"
-import { createComment, updateComment } from "./commentSlice"
+import { createComment, deleteComment } from "./commentSlice"
 
 export const fetchPosts = createAsyncThunk(
   "posts/fetchPosts",
@@ -125,17 +125,14 @@ const postSlice = createSlice({
         const post = state.posts.find(p => p._id === comment.post)
         if (post) post.comments.push(comment)
       })
-      .addCase(updateComment.fulfilled, (state, { payload: comment }) => {
-        const post = state.posts.find(p => p._id === comment.post)
-        if (post && Array.isArray(post.comments)) {
-          const ci = post.comments.findIndex(c => c._id === comment._id)
-          if (ci !== -1) {
-            post.comments[ci] = comment
-          } else {
-            post.comments.push(comment)
+      .addCase(deleteComment.fulfilled, (state, { payload: commentId }) => {
+        state.posts.forEach(post => {
+          if (Array.isArray(post.comments)) {
+            post.comments = post.comments.filter(c => c._id !== commentId)
           }
-        }
+        })
       })
+      
 
       .addCase(deletePost.pending, (state) => { state.loading = true; state.error = null })
       .addCase(deletePost.fulfilled, (state, { payload: id }) => {

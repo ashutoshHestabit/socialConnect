@@ -108,7 +108,7 @@ export default function Feed({ socket }) {
         {/* Sidebar */}
         <aside className="space-y-4">
           <div className="bg-white p-4 rounded-xl shadow">
-            <h3 className="font-semibold mb-2">Active Friends</h3>
+            <h3 className="font-semibold mb-2 text-center">All Friend List</h3>
             <UserList
               current={user._id}
               selected={selectedChat}
@@ -118,7 +118,7 @@ export default function Feed({ socket }) {
         </aside>
 
         {/* Main */}
-        {initialLoading || loading || commentsLoading ? (
+        {initialLoading || loading? (
           <div className="flex items-center justify-center h-64">
             <div className="text-center ">
               <svg

@@ -122,12 +122,7 @@ export default function Chat({ socket, userId, peerId,selectedUser }) {
       {/* Message input */}
       <div className="border-t p-3">
         <div className="flex items-center gap-2 bg-gray-100 rounded-full px-4 py-1">
-          <button className="text-gray-500 hover:text-blue-500">
-            <FaSmile />
-          </button>
-          <button className="text-gray-500 hover:text-blue-500">
-            <FaImage />
-          </button>
+
           <input
             type="text"
             value={text}
