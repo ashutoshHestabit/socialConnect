@@ -13,6 +13,7 @@ export default function Feed({ socket }) {
   const dispatch = useDispatch()
   const { user } = useSelector((state) => state.auth)
 
+  // Pull exactly your slice fields:
   const {
     posts,
     loading,    // whether we're fetching posts
@@ -29,6 +30,7 @@ export default function Feed({ socket }) {
   } = useSelector((state) => state.comments)
 
   const { selectedChat } = useSelector((state) => state.ui)
+  const[selectedUser, setSelectedUser]= useState(null)
 
   // single local loading flag for initial mount
   const [initialLoading, setInitialLoading] = useState(true)
@@ -51,8 +53,10 @@ export default function Feed({ socket }) {
     loadAll()
   }, [dispatch, limit])
 
-  const handleSelectChat = (userId) => {
-    dispatch(setSelectedChat(userId))
+
+  const handleSelectChat = (userId, username) => {
+    dispatch(setSelectedChat(selectedChat === userId ? null : userId))
+    setSelectedUser(username)
   }
 
   // Intersection observer for infinite scroll
@@ -147,7 +151,7 @@ export default function Feed({ socket }) {
           {/* Chat */}
           {selectedChat && (
             <div className="bg-white rounded-xl shadow overflow-hidden">
-              <Chat socket={socket} userId={user._id} peerId={selectedChat} />
+              <Chat socket={socket} userId={user._id} peerId={selectedChat} selectedUser={selectedUser}/>
             </div>
           )}
 

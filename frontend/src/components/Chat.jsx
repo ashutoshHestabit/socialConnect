@@ -4,7 +4,7 @@ import { FaPaperPlane, FaSmile, FaImage } from "react-icons/fa"
 import moment from "moment"
 import { fetchChatHistory, sendMessage, receiveMessage } from "../redux/slices/messageSlice"
 
-export default function Chat({ socket, userId, peerId }) {
+export default function Chat({ socket, userId, peerId,selectedUser }) {
   const [text, setText] = useState("")
   const endRef = useRef()
   const dispatch = useDispatch()
@@ -14,6 +14,7 @@ export default function Chat({ socket, userId, peerId }) {
   const chatMessages = messages[peerId] || []
 
   const peerUser = users?.find((user) => user._id === peerId)
+  console.log(users)
 
   // Load chat history when peer changes
   useEffect(() => {
@@ -74,14 +75,14 @@ export default function Chat({ socket, userId, peerId }) {
       <div className="border-b p-4 flex items-center">
         <div className="relative">
           <img
-            src={`https://ui-avatars.com/api/?name=${peerUser?.username || "User"}&background=random`}
+            src={`https://ui-avatars.com/api/?name=${selectedUser || "User"}&background=random`}
             className="w-10 h-10 rounded-full mr-3"
             alt="Chat with"
           />
           <span className="absolute bottom-0 right-2 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span>
         </div>
         <div>
-          <h3 className="font-semibold">{peerUser?.username || "User"}</h3>
+          <h3 className="font-semibold">{selectedUser || "User"}</h3>
           <p className="text-xs text-green-500">Online</p>
         </div>
       </div>

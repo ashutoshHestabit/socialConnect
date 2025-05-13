@@ -64,7 +64,7 @@ export default function UserList({ current, selected, onSelect }) {
         .map((u) => (
           <div
             key={u._id}
-            onClick={() => onSelect(u._id)}
+            onClick={() => onSelect(u._id, u.username)}
             className={`flex items-center p-3 rounded-lg cursor-pointer transition-colors ${
               selected === u._id ? "bg-blue-50 border border-blue-200" : "hover:bg-gray-50"
             }`}
