@@ -13,7 +13,6 @@ export default function Feed({ socket }) {
   const dispatch = useDispatch()
   const { user } = useSelector((state) => state.auth)
 
-  // Pull exactly your slice fields:
   const {
     posts,
     loading,    // whether we're fetching posts
@@ -73,15 +72,15 @@ export default function Feed({ socket }) {
   )
 
   // Show skeleton while any initial data is loading
-  if (initialLoading || loading || commentsLoading) {
-    return (
-      <div className="min-h-screen bg-gray-100 p-4">
-        <div className="max-w-6xl mx-auto text-center animate-pulse text-gray-500">
-          Loading…
-        </div>
-      </div>
-    )
-  }
+  // if (initialLoading || loading || commentsLoading) {
+  //   return (
+  //     <div className="min-h-screen bg-gray-100 p-4">
+  //       <div className="max-w-6xl mx-auto text-center animate-pulse text-gray-500">
+  //         Loading…
+  //       </div>
+  //     </div>
+  //   )
+  // }
 
   // Show error if posts fetch failed
   if (error) {
@@ -116,7 +115,35 @@ export default function Feed({ socket }) {
         </aside>
 
         {/* Main */}
-        <main className="md:col-span-2 space-y-4">
+        {initialLoading || loading || commentsLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center ">
+              <svg
+                className="animate-spin h-12 w-12 text-blue-600 mx-auto"
+                // xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                />
+              </svg>
+              <p className="mt-3 text-lg font-medium text-gray-700">
+                Loading…
+              </p>
+            </div>
+          </div>
+        ) : <main className="md:col-span-2 space-y-4">
           {/* Chat */}
           {selectedChat && (
             <div className="bg-white rounded-xl shadow overflow-hidden">
@@ -148,7 +175,7 @@ export default function Feed({ socket }) {
               </p>
             )}
           </div>
-        </main>
+        </main>}
       </div>
     </div>
   )
