@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { deletePost, likePost, updatePost } from "../redux/slices/postSlice";
 import { createComment, updateComment, deleteComment } from "../redux/slices/commentSlice";
 import { FaComment, FaHeart, FaTrash, FaEdit, FaCheck, FaTimes, FaRegComment } from "react-icons/fa";

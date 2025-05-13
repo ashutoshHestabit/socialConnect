@@ -19,8 +19,7 @@ export default function Feed({ socket }) {
     loading,    // whether we're fetching posts
     error,      // any fetch error
     skip,       // how many we've already loaded
-    limit,
-    total,
+    limit,      // how many to load at once
     hasMore,    // whether there's more to load
   } = useSelector((state) => state.posts)
 

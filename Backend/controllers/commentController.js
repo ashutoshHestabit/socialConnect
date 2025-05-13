@@ -63,14 +63,21 @@ export const updateComment = async (req, res) => {
     }
 
     comment.content = req.body.content
-    const updatedComment = await comment.save()
-    
+    await comment.save()
+
+    // ✅ Populate author before sending response
+    const updatedComment = await Comment.findById(comment._id)
+      .populate("author", "username avatar") // Include fields you need in frontend
+
     res.json(updatedComment)
+
+    // ✅ Emit the populated version
     req.app.get('io').emit('updateComment', updatedComment)
   } catch (error) {
     res.status(500).json({ message: "Error updating comment", error: error.message })
   }
 }
+
 
 export const getAllComments = async (req, res) => {
   try {

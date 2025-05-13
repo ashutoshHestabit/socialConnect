@@ -14,7 +14,6 @@ export default function Chat({ socket, userId, peerId,selectedUser }) {
   const chatMessages = messages[peerId] || []
 
   const peerUser = users?.find((user) => user._id === peerId)
-  console.log(users)
 
   // Load chat history when peer changes
   useEffect(() => {
