@@ -1,3 +1,4 @@
+// src/components/Register.jsx
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -7,193 +8,155 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function Register() {
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [username,        setUsername]        = useState("");
+  const [email,           setEmail]           = useState("");
+  const [password,        setPassword]        = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const { loading, user } = useSelector((state) => state.auth);
+  const navigate  = useNavigate();
+  const { loading, user, error } = useSelector((state) => state.auth);
 
   useEffect(() => {
     dispatch(clearError());
     if (user) navigate("/feed");
   }, [dispatch, user, navigate]);
 
-  const validateForm = () => {
-    let isValid = true;
+  // Regexes
+  const usernameRe = /^[A-Za-z0-9_]+$/;
+  const emailRe    = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+  const pwdRe      = /^(?=.{6,}$)(?=.*[A-Z])(?=.*[!@#$%^&*])[a-z0-9A-Z!@#$%^&*]+$/;
 
-    // Username validation
+  const validateForm = () => {
     if (!username.trim()) {
       toast.error("Username is required");
-      isValid = false;
-    } else if (/^\d+$/.test(username)) {
-      toast.error("Username must contain letters");
-      isValid = false;
-    } else if (!/^[A-Za-z0-9_]+$/.test(username)) {
+      return false;
+    }
+    if (!usernameRe.test(username)) {
       toast.error("Username can only contain letters, numbers, and underscores");
-      isValid = false;
+      return false;
     }
-
-    // Email validation
-    if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(email)) {
+    if (!emailRe.test(email)) {
       toast.error("Invalid email address format");
-      isValid = false;
+      return false;
     }
-
-    // Password validation
-if (password.length < 6) {
-  toast.error("Password must be at least 6 characters");
-  isValid = false;
-} else if (!/^(?=.*[a-zA-Z])(?=.*[0-9])[a-zA-Z0-9]+$/.test(password)) {
-  toast.error("Password must contain a mix of alphabets and numbers");
-  isValid = false;
-} else if (password !== confirmPassword) {
-  toast.error("Passwords do not match");
-  isValid = false;
-}
-
-    return isValid;
+    if (!pwdRe.test(password)) {
+      toast.error(
+        "Password must be ≥6 chars, include one uppercase letter, one special character (!@#$%^&*), and rest lowercase letters or numbers"
+      );
+      return false;
+    }
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-  
+
     try {
-      // 1) Dispatch but don’t await yet
-      const promise = dispatch(registerUser({ username, email, password }));
-      // 2) Await the unwrapped payload
-      const userData = await promise.unwrap();
-  
+      const resultAction = await dispatch(
+        registerUser({ username, email, password })
+      ).unwrap();
+
       toast.success("Registration successful! Redirecting…");
-      // give the user a moment to see the toast
       setTimeout(() => navigate("/feed"), 1000);
     } catch (err) {
-      // unwrap() will throw the rejected error.payload or message
-      const msg =
-        typeof err === "string"
-          ? err
-          : err?.message || "Registration failed. Please try again.";
-      toast.error(msg);
+      toast.error(err || "Registration failed. Please try again.");
     }
   };
-  
-  
 
   const handleGoogleSuccess = async (credentialResponse) => {
-    if (!credentialResponse.credential) {
+    if (credentialResponse.credential) {
+      try {
+        await dispatch(googleLogin(credentialResponse.credential)).unwrap();
+      } catch {
+        toast.error("Google sign-up failed. Please try again.");
+      }
+    } else {
       toast.error("Google sign-up failed");
-      return;
     }
-
-    try {
-      await dispatch(googleLogin(credentialResponse.credential)).unwrap();
-    } catch (error) {
-      toast.error("Google sign-up failed. Please try again.");
-    }
-  };
-
-  const handleGoogleError = () => {
-    toast.error("Google sign-up failed. Please try another method.");
   };
 
   return (
     <div className="max-w-md mx-auto mt-16 p-6 bg-white rounded-lg shadow-lg">
-      <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
-        Create an Account
-      </h2>
+      <h2 className="text-2xl font-bold text-center mb-6">Create an Account</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Username */}
         <div>
-          <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-            Username
-          </label>
+          <label className="block mb-1">Username</label>
           <input
-            id="username"
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             placeholder="johndoe"
+            className="w-full p-2 border rounded"
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
+        {/* Email */}
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-            Email
-          </label>
+          <label className="block mb-1">Email</label>
           <input
-            id="email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
+            className="w-full p-2 border rounded"
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
+        {/* Password */}
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-            Password
-          </label>
+          <label className="block mb-1">Password</label>
           <input
-            id="password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
+            placeholder="••••••"
+            className="w-full p-2 border rounded"
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
+        {/* Confirm Password */}
         <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-            Confirm Password
-          </label>
+          <label className="block mb-1">Confirm Password</label>
           <input
-            id="confirmPassword"
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="••••••••"
+            placeholder="••••••"
+            className="w-full p-2 border rounded"
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
+        {/* Submit */}
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors disabled:bg-green-300"
+          className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
         >
           {loading ? "Creating account..." : "Sign Up"}
         </button>
       </form>
 
-      <div className="mt-6">
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">Or continue with</span>
-          </div>
-        </div>
-
-        <div className="mt-6 flex justify-center">
+      <div className="mt-6 text-center">
+        <span className="text-gray-500">Or continue with</span>
+        <div className="mt-4 flex justify-center">
           <GoogleLogin
             onSuccess={handleGoogleSuccess}
-            onError={handleGoogleError}
-            useOneTap={false}
+            onError={() => toast.error("Google sign-up failed")}
             theme="filled_blue"
             text="signup_with"
             shape="rectangular"
-            locale="en"
             width="280"
           />
         </div>
@@ -201,22 +164,12 @@ if (password.length < 6) {
 
       <p className="mt-8 text-center text-sm text-gray-600">
         Already have an account?{" "}
-        <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
+        <Link to="/login" className="text-blue-600 hover:underline">
           Sign in
         </Link>
       </p>
 
-      <ToastContainer
-        position="bottom-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
+      <ToastContainer position="bottom-right" autoClose={3000} />
     </div>
   );
 }

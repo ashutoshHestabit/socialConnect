@@ -18,61 +18,57 @@ const generateToken = (id) => {
  * @access  Public
  */
 export const registerUser = asyncHandler(async (req, res) => {
-  const { username, email, password } = req.body
+  const { username, email, password } = req.body;
+
+  // 1) All fields required
   if (!username || !email || !password) {
-    res.status(400)
-    throw new Error("All fields are required")
+    return res.status(400).json({ message: "All fields are required" });
   }
 
-  // Username validation
-  if (/\d/.test(username)) {
-    res.status(400)
-    throw new Error("Username cannot contain numbers")
+  // 2) Username: letters, numbers, underscores
+  if (!/^[A-Za-z0-9_]+$/.test(username)) {
+    return res.status(400).json({
+      message: "Username can only contain letters, numbers, and underscores"
+    });
   }
 
-  // Email validation
-  if (!email.includes('@') || !/^[a-zA-Z0-9]+@/.test(email)) {
-    res.status(400)
-    throw new Error("Invalid email format")
+  // 3) Email: basic validation
+  if (!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email)) {
+    return res.status(400).json({ message: "Invalid email format" });
   }
 
-  // Password validation
-  if (password.length < 6 || !/^[a-zA-Z0-9]+$/.test(password)) {
-    res.status(400)
-    throw new Error("Password must be 6+ alphanumeric characters")
+  // 4) Password: 6+ chars, ≥1 uppercase, ≥1 special, rest lowercase/digits
+  const pwdRe = /^(?=.{6,}$)(?=.*[A-Z])(?=.*[!@#$%^&*])[a-z0-9A-Z!@#$%^&*]+$/;
+  if (!pwdRe.test(password)) {
+    return res.status(400).json({
+      message:
+        "Password must be at least 6 characters, include one uppercase letter, one special character (!@#$%^&*), and the rest lowercase letters or numbers"
+    });
   }
-  
-  // check if user exists
-  const exists = await User.findOne({ email })
+
+  // 5) Check duplicate email
+  const exists = await User.findOne({ email });
   if (exists) {
-    res.status(400)
-    throw new Error("Email already in use")
+    return res.status(400).json({ message: "Email already in use" });
   }
 
-  // hash password
-  const salt = await bcrypt.genSalt(10)
-  const hashed = await bcrypt.hash(password, salt)
+  // 6) Hash and create
+  const salt = await bcrypt.genSalt(10);
+  const hashed = await bcrypt.hash(password, salt);
 
-  // create
-  const user = await User.create({
-    username,
-    email,
-    password: hashed,
-  })
-
+  const user = await User.create({ username, email, password: hashed });
   if (user) {
     res.status(201).json({
-      _id: user._id,
-      username: user.username,
-      email: user.email,
-      token: generateToken(user._id),
+      _id:       user._id,
+      username:  user.username,
+      email:     user.email,
+      token:     generateToken(user._id),
       createdAt: user.createdAt,
-    })
+    });
   } else {
-    res.status(400)
-    throw new Error("Invalid user data")
+    res.status(400).json({ message: "Invalid user data" });
   }
-})
+});
 
 /**
  * @route   POST /api/users/login
