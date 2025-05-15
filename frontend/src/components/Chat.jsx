@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import { FaPaperPlane, FaSmile, FaImage } from "react-icons/fa"
+import { FaPaperPlane} from "react-icons/fa"
 import moment from "moment"
 import { fetchChatHistory, sendMessage, receiveMessage } from "../redux/slices/messageSlice"
 
