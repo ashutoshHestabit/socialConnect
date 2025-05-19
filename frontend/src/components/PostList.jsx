@@ -13,7 +13,6 @@ export default function PostList({ posts, userId, socket }) {
   const [editedCommentContent, setEditedCommentContent] = useState("");
   const [expandedPosts, setExpandedPosts] = useState({});
 
-  // Post handlers
   const toggleComments = (postId) => {
     setExpandedPosts(prev => ({
       ...prev,
@@ -51,7 +50,6 @@ export default function PostList({ posts, userId, socket }) {
     }
   };
 
-  // Comment handlers
   const handleCommentSubmit = (postId) => {
     if (commentText[postId]?.trim()) {
       dispatch(createComment({ post: postId, content: commentText[postId] }));
@@ -85,32 +83,31 @@ export default function PostList({ posts, userId, socket }) {
     }
   };
 
-  // Render comments for a post
   const renderComments = (comments) => {
     return comments.map(comment => (
-      <div key={comment._id} className="ml-6 mt-2 flex items-start space-x-2">
+      <div key={comment._id} className="ml-6 mt-2 flex items-start gap-3">
         <img
           src={comment.author.profilePicture || `https://ui-avatars.com/api/?name=${comment.author.username}&background=random`}
-          className="w-6 h-6 rounded-full"
+          className="w-7 h-7 rounded-full object-cover border-2 border-white shadow-sm"
           alt={comment.author.username}
         />
-        <div className="flex-1 bg-gray-100 p-2 rounded-lg">
+        <div className="flex-1 bg-gray-50 p-3 rounded-xl">
           <div className="flex justify-between items-center mb-1">
-            <span className="text-sm font-medium">{comment.author.username}</span>
+            <span className="text-sm font-medium text-gray-700">{comment.author.username}</span>
             
             {comment.author._id === userId && (
-              <div className="flex space-x-2">
+              <div className="flex gap-2">
                 {editingCommentId === comment._id ? (
                   <>
                     <button
                       onClick={cancelCommentEdit}
-                      className="text-red-500 hover:text-red-700 text-xs"
+                      className="text-red-500 hover:text-red-700 text-xs transition-colors"
                     >
                       <FaTimes />
                     </button>
                     <button
                       onClick={submitCommentEdit}
-                      className="text-green-500 hover:text-green-700 text-xs"
+                      className="text-green-500 hover:text-green-700 text-xs transition-colors"
                     >
                       <FaCheck />
                     </button>
@@ -119,13 +116,13 @@ export default function PostList({ posts, userId, socket }) {
                   <>
                     <button
                       onClick={() => startCommentEdit(comment)}
-                      className="text-blue-500 hover:text-blue-700 text-xs"
+                      className="text-blue-500 hover:text-blue-700 text-xs transition-colors"
                     >
                       <FaEdit />
                     </button>
                     <button
                       onClick={() => handleDeleteComment(comment._id)}
-                      className="text-red-500 hover:text-red-700 text-xs"
+                      className="text-red-500 hover:text-red-700 text-xs transition-colors"
                     >
                       <FaTrash />
                     </button>
@@ -140,11 +137,11 @@ export default function PostList({ posts, userId, socket }) {
               type="text"
               value={editedCommentContent}
               onChange={(e) => setEditedCommentContent(e.target.value)}
-              className="w-full p-1 text-sm border rounded mt-1"
+              className="w-full p-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
               autoFocus
             />
           ) : (
-            <p className="text-sm">{comment.content}</p>
+            <p className="text-sm text-gray-600">{comment.content}</p>
           )}
         </div>
       </div>
@@ -152,19 +149,19 @@ export default function PostList({ posts, userId, socket }) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-2xl mx-auto">
       {posts.map(post => (
-        <div key={post._id} className="bg-white rounded-xl shadow-sm p-4">
+        <div key={post._id} className="bg-white rounded-xl shadow-lg p-6 mb-6 transition-all duration-300 ">
           {/* Post Header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
               <img
                 src={post.author.profilePicture || `https://ui-avatars.com/api/?name=${post.author.username}&background=random`}
-                className="w-10 h-10 rounded-full"
+                className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
                 alt={post.author.username}
               />
               <div>
-                <h3 className="font-semibold">{post.author.username}</h3>
+                <h3 className="font-semibold text-gray-800">{post.author.username}</h3>
                 <p className="text-sm text-gray-500">
                   {new Date(post.createdAt).toLocaleDateString()}
                 </p>
@@ -177,13 +174,13 @@ export default function PostList({ posts, userId, socket }) {
                   <>
                     <button 
                       onClick={cancelPostEdit}
-                      className="text-red-500 hover:text-red-700"
+                      className="text-red-500 hover:text-red-700 transition-colors"
                     >
                       <FaTimes />
                     </button>
                     <button
                       onClick={() => submitPostEdit(post._id)}
-                      className="text-green-500 hover:text-green-700"
+                      className="text-green-500 hover:text-green-700 transition-colors"
                     >
                       <FaCheck />
                     </button>
@@ -192,13 +189,13 @@ export default function PostList({ posts, userId, socket }) {
                   <>
                     <button
                       onClick={() => startPostEdit(post)}
-                      className="text-blue-500 hover:text-blue-700"
+                      className="text-blue-500 hover:text-blue-700 transition-colors"
                     >
                       <FaEdit />
                     </button>
                     <button
                       onClick={() => handleDeletePost(post._id)}
-                      className="text-red-500 hover:text-red-700"
+                      className="text-red-500 hover:text-red-700 transition-colors"
                     >
                       <FaTrash />
                     </button>
@@ -213,19 +210,21 @@ export default function PostList({ posts, userId, socket }) {
             <textarea
               value={editedContent}
               onChange={(e) => setEditedContent(e.target.value)}
-              className="w-full p-2 border rounded mb-4"
+              className="w-full p-3 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
               rows="3"
               autoFocus
             />
           ) : (
             <>
-              <p className="mb-4">{post.content}</p>
+              <p className="mb-4 text-gray-700 leading-relaxed">{post.content}</p>
               {post.image && (
-                <img
-                  src={post.image}
-                  alt="Post"
-                  className="w-full h-64 object-cover rounded-lg mb-4"
-                />
+                <div className="w-full aspect-video mb-4 rounded-xl overflow-hidden shadow-sm">
+                  <img
+                    src={post.image}
+                    alt="Post"
+                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                  />
+                </div>
               )}
             </>
           )}
@@ -235,20 +234,30 @@ export default function PostList({ posts, userId, socket }) {
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => handleLike(post._id)}
-                className={`flex items-center space-x-1 ${
-                  post.likes.includes(userId) ? 'text-red-500' : 'text-gray-500'
+                className={`flex items-center space-x-1 transition-all duration-200 ${
+                  post.likes.includes(userId) 
+                    ? 'text-red-500 hover:text-red-600' 
+                    : 'text-gray-500 hover:text-red-400'
                 }`}
               >
-                <FaHeart />
-                <span>{post.likes.length}</span>
+                <FaHeart className="w-5 h-5" />
+                <span className="font-medium">{post.likes.length}</span>
               </button>
 
               <button
                 onClick={() => toggleComments(post._id)}
-                className="flex items-center space-x-1 text-gray-500"
+                className={`flex items-center space-x-1 ${
+                  expandedPosts[post._id] 
+                    ? 'text-blue-500' 
+                    : 'text-gray-500 hover:text-blue-400'
+                } transition-colors duration-200`}
               >
-                {expandedPosts[post._id] ? <FaComment /> : <FaRegComment />}
-                <span>{post.comments.length}</span>
+                {expandedPosts[post._id] ? (
+                  <FaComment className="w-5 h-5" />
+                ) : (
+                  <FaRegComment className="w-5 h-5" />
+                )}
+                <span className="font-medium">{post.comments.length}</span>
               </button>
             </div>
           </div>
@@ -257,12 +266,12 @@ export default function PostList({ posts, userId, socket }) {
           {expandedPosts[post._id] && (
             <div className="mt-4">
               {post.comments.length > 0 && (
-                <div className="mb-4 space-y-2">
+                <div className="mb-4 space-y-3">
                   {renderComments(post.comments)}
                 </div>
               )}
 
-              <div className="mt-4 flex items-center space-x-2">
+              <div className="mt-4 flex items-center gap-2">
                 <input
                   type="text"
                   value={commentText[post._id] || ""}
@@ -271,12 +280,12 @@ export default function PostList({ posts, userId, socket }) {
                     [post._id]: e.target.value
                   }))}
                   placeholder="Write a comment..."
-                  className="flex-1 p-2 border rounded"
+                  className="flex-1 p-2 px-4 border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-300"
                   onKeyPress={(e) => e.key === 'Enter' && handleCommentSubmit(post._id)}
                 />
                 <button
                   onClick={() => handleCommentSubmit(post._id)}
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-5 py-2 rounded-full hover:from-blue-600 hover:to-blue-700 transition-all shadow-sm"
                 >
                   Post
                 </button>
